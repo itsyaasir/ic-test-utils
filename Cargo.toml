@@ -1,6 +1,6 @@
 [package]
 edition = "2021"
-name = "test-utils"
+name = "ic-test-utils"
 version = "0.1.0"
 
 [dependencies]
