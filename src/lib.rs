@@ -1,5 +1,5 @@
-//! Utilities for testing
 #![deny(missing_docs)]
+#![doc = include_str!("../README.md")]
 use std::path::Path;
 
 use ic_agent::agent::http_transport::ReqwestHttpReplicaV2Transport;
