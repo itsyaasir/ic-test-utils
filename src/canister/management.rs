@@ -49,7 +49,7 @@ struct In {
 ///
 /// ```
 /// # use ic_agent::Agent;
-/// use test_utils::canister::Canister;
+/// use ic_test_utils::canister::Canister;
 /// # async fn run(agent: &Agent, principal: ic_cdk::export::candid::Principal) {
 /// let wallet = Canister::new_wallet(agent, "account_name", None).unwrap();
 /// let management = Canister::new_management(agent);
@@ -85,7 +85,7 @@ impl<'agent> Canister<'agent, Management> {
 
     /// Install code in an existing canister.
     /// To create a canister first use [`Canister::create_canister`]
-    pub async fn install_code<'wallet_agent, T: ArgumentEncoder + std::fmt::Debug>(
+    pub async fn install_code<'wallet_agent, T: ArgumentEncoder>(
         &self,
         wallet: &Canister<'wallet_agent, Wallet>,
         canister_id: Principal,
@@ -107,7 +107,7 @@ impl<'agent> Canister<'agent, Management> {
 
     /// Upgrade an existing canister.
     /// Upgrading a canister for a test is possible even if the underlying binary hasn't changed
-    pub async fn upgrade_code<'wallet_agent, T: CandidType + std::fmt::Debug>(
+    pub async fn upgrade_code<'wallet_agent, T: CandidType>(
         &self,
         wallet: &Canister<'wallet_agent, Wallet>,
         canister_id: Principal,

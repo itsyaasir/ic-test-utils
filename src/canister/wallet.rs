@@ -4,7 +4,7 @@
 //!
 //! ```
 //! # async fn run() {
-//! use test_utils::{get_agent, Canister};
+//! use ic_test_utils::{get_agent, Canister};
 //!
 //! let user = "bob";
 //! let agent = get_agent(user, None).await.unwrap();
