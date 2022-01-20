@@ -18,6 +18,15 @@ use crate::Result;
 mod management;
 mod wallet;
 
+pub use wallet::Wallet;
+pub use management::Management;
+
+/// Type alias for the management canister
+pub type ManagementCanister<'agent> = Canister<'agent, Management>;
+
+/// Type alias for the wallet canister
+pub type WalletCanister<'agent> = Canister<'agent, Wallet>;
+
 /// Represent a Canister in a test case
 pub struct Canister<'agent, T> {
     id: Principal,
