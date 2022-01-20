@@ -4,7 +4,8 @@ use std::path::Path;
 
 use ic_agent::agent::http_transport::ReqwestHttpReplicaV2Transport;
 use ic_agent::identity::BasicIdentity;
-use ic_agent::Agent;
+
+pub use ic_agent::Agent;
 
 mod errors;
 pub use errors::{Error, Result};
