@@ -1,4 +1,6 @@
-use ic_cdk::export::candid::{Principal, CandidType, Decode, Deserialize, Encode, encode_args, utils::ArgumentEncoder};
+use ic_cdk::export::candid::{
+    encode_args, utils::ArgumentEncoder, CandidType, Decode, Deserialize, Encode, Principal,
+};
 
 use super::wallet::Wallet;
 use super::{Agent, Canister};
@@ -65,7 +67,7 @@ impl<'agent> Canister<'agent, Management> {
         Self::new(id, agent)
     }
 
-    // Make a call through the wallet so cycles 
+    // Make a call through the wallet so cycles
     // can be spent
     async fn through_wallet_call<Out>(
         &self,
@@ -73,14 +75,36 @@ impl<'agent> Canister<'agent, Management> {
         fn_name: &str,
         cycles: u64,
         arg: Option<Vec<u8>>,
-    ) -> Result<Out> 
-        where 
-            Out: CandidType + for<'de> Deserialize<'de>
+    ) -> Result<Out>
+    where
+        Out: CandidType + for<'de> Deserialize<'de>,
     {
         let call = self.update_raw(fn_name, arg)?;
         let result = wallet.call_forward(call, cycles).await?;
         let out = Decode!(&result, Out)?;
         Ok(out)
+    }
+
+    async fn _install_code<'wallet_agent, T: ArgumentEncoder>(
+        &self,
+        wallet: &Canister<'wallet_agent, Wallet>,
+        canister_id: Principal,
+        bytecode: Vec<u8>,
+        mode: InstallMode,
+        arg: T,
+    ) -> Result<()> {
+        let install_args = CanisterInstall {
+            mode,
+            canister_id,
+            wasm_module: bytecode,
+            arg: encode_args(arg)?,
+        };
+
+        let args = Encode!(&install_args)?;
+        self.through_wallet_call::<()>(wallet, "install_code", 0, Some(args))
+            .await?;
+
+        Ok(())
     }
 
     /// Install code in an existing canister.
@@ -92,38 +116,21 @@ impl<'agent> Canister<'agent, Management> {
         bytecode: Vec<u8>,
         arg: T,
     ) -> Result<()> {
-        let install_args = CanisterInstall {
-            mode: InstallMode::Install,
-            canister_id,
-            wasm_module: bytecode,
-            arg: encode_args(arg)?,
-        };
-
-        let args = Encode!(&install_args)?;
-        self.through_wallet_call::<()>(wallet, "install_code", 0, Some(args)).await?;
-
-        Ok(())
+        self._install_code(wallet, canister_id, bytecode, InstallMode::Install, arg)
+            .await
     }
 
     /// Upgrade an existing canister.
     /// Upgrading a canister for a test is possible even if the underlying binary hasn't changed
-    pub async fn upgrade_code<'wallet_agent, T: CandidType>(
+    pub async fn upgrade_code<'wallet_agent, T: ArgumentEncoder>(
         &self,
         wallet: &Canister<'wallet_agent, Wallet>,
         canister_id: Principal,
         bytecode: Vec<u8>,
         arg: T,
     ) -> Result<()> {
-        let install_args = CanisterInstall {
-            mode: InstallMode::Upgrade,
-            canister_id,
-            wasm_module: bytecode,
-            arg: Encode!(&arg)?,
-        };
-
-        let args = Encode!(&install_args)?;
-        self.through_wallet_call::<Principal>(wallet, "upgrade_code", 0, Some(args)).await?;
-        Ok(())
+        self._install_code(wallet, canister_id, bytecode, InstallMode::Upgrade, arg)
+            .await
     }
 
     /// Stop a running canister
@@ -133,7 +140,8 @@ impl<'agent> Canister<'agent, Management> {
         canister_id: Principal, // canister to stop
     ) -> Result<()> {
         let arg = Encode!(&In { canister_id })?;
-        self.through_wallet_call::<()>(wallet, "stop_canister", 0, Some(arg)).await?;
+        self.through_wallet_call::<()>(wallet, "stop_canister", 0, Some(arg))
+            .await?;
         Ok(())
     }
 
@@ -145,7 +153,8 @@ impl<'agent> Canister<'agent, Management> {
         canister_id: Principal, // canister to delete
     ) -> Result<()> {
         let arg = Encode!(&In { canister_id })?;
-        self.through_wallet_call(wallet, "delete_canister", 0, Some(arg)).await?;
+        self.through_wallet_call(wallet, "delete_canister", 0, Some(arg))
+            .await?;
         Ok(())
     }
 }

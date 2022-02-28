@@ -10,16 +10,16 @@
 //! ```
 use std::marker::PhantomData;
 
-use ic_agent::ic_types::Principal;
-use ic_agent::agent::{Agent, UpdateBuilder, QueryBuilder};
-use ic_cdk::export::candid::{CandidType, Encode};
 use crate::Result;
+use ic_agent::agent::{Agent, QueryBuilder, UpdateBuilder};
+use ic_agent::ic_types::Principal;
+use ic_cdk::export::candid::{CandidType, Encode};
 
 mod management;
 mod wallet;
 
-pub use wallet::Wallet;
 pub use management::Management;
+pub use wallet::Wallet;
 
 /// Type alias for the management canister
 pub type ManagementCanister<'agent> = Canister<'agent, Management>;
@@ -49,8 +49,12 @@ impl<'agent, T> Canister<'agent, T> {
         &self.id
     }
 
-    /// Update 
-    fn update_raw(&self, method_name: impl Into<String>, args: Option<Vec<u8>>) -> Result<UpdateBuilder<'_>> {
+    /// Update
+    fn update_raw(
+        &self,
+        method_name: impl Into<String>,
+        args: Option<Vec<u8>>,
+    ) -> Result<UpdateBuilder<'_>> {
         let mut builder = self.agent.update(&self.id, method_name);
         if let Some(ref args) = args {
             builder.with_arg(args);
@@ -59,7 +63,11 @@ impl<'agent, T> Canister<'agent, T> {
     }
 
     /// Update call to the canister
-    pub fn update<A: CandidType>(&self, method_name: impl Into<String>, args: Option<A>) -> Result<UpdateBuilder<'_>> {
+    pub fn update<A: CandidType>(
+        &self,
+        method_name: impl Into<String>,
+        args: Option<A>,
+    ) -> Result<UpdateBuilder<'_>> {
         let mut builder = self.agent.update(&self.id, method_name);
         if let Some(ref args) = args {
             let args = Encode!(args)?;
