@@ -19,11 +19,13 @@ pub const LEDGER_WASM: &[u8] = include_bytes!("ledger.wasm");
 /// ```
 /// use ic_test_utils::ledger::{new_ledger_canister, Tokens};
 ///
+/// # fn get_agent() -> ic_test_utils::Agent { panic!() }
 /// # async fn run() -> Result<(), Box<dyn std::error::Error>> {
+/// # let agent = get_agent();
 /// let ledger_canister = new_ledger_canister("bob")
 ///     .with_account("max", Tokens::new(100_000_000, 0)?)?
 ///     .with_account("alex", Tokens::from_tokens(50_000_000)?)?
-///     .build().await;
+///     .build(&agent, "max", 1000_000_000).await;
 ///
 /// # Ok(())
 /// # }
