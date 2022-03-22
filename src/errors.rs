@@ -2,7 +2,7 @@
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, thiserror::Error)]
-/// Error type 
+/// Error type
 pub enum Error {
     /// Identity missing from the json
     #[error("Invalid or missing account name in json structure")]

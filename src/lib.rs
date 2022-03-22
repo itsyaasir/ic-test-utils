@@ -3,15 +3,19 @@
 use std::path::Path;
 
 use ic_agent::agent::http_transport::ReqwestHttpReplicaV2Transport;
+use ic_agent::ic_types::Principal;
 use ic_agent::identity::BasicIdentity;
-use ic_agent::Agent;
+use ic_cdk::export::candid::utils::ArgumentEncoder;
+
+pub use ic_agent::Agent;
 
 mod errors;
 pub use errors::{Error, Result};
 
 pub mod canister;
+pub mod ledger;
 
-pub use canister::Canister;
+pub use canister::{Canister, Management, ManagementCanister, Wallet, WalletCanister};
 
 const URL: &str = "http://localhost:8000";
 
@@ -63,4 +67,22 @@ pub fn get_waiter() -> garcon::Delay {
         .throttle(std::time::Duration::from_millis(500))
         .timeout(std::time::Duration::from_secs(60 * 5))
         .build()
+}
+
+/// Create a canister and install
+/// the provided byte code.
+pub async fn create_canister<T: ArgumentEncoder>(
+    agent: &Agent,
+    account_name: impl AsRef<str>,
+    bytecode: Vec<u8>,
+    arg: T,
+    cycles: u64,
+) -> Result<Principal> {
+    let wallet = Canister::new_wallet(agent, account_name, None)?;
+    let management = Canister::new_management(agent);
+    let canister_id = wallet.create_canister(cycles, None).await?;
+    management
+        .install_code(&wallet, canister_id, bytecode, arg)
+        .await?;
+    Ok(canister_id)
 }
