@@ -24,13 +24,11 @@ const URL: &str = "http://localhost:8000";
 ///
 /// If this is ever needed outside of `get_agent` just make this
 /// function public.
-fn get_identity(account_name: impl AsRef<Path>) -> Result<BasicIdentity> {
-    let mut ident_path = dirs::config_dir().ok_or(crate::Error::MissingConfig)?;
-    ident_path.push("dfx/identity");
-    ident_path.push(account_name);
-    ident_path.push("identity.pem");
-
-    let identity = BasicIdentity::from_pem_file(ident_path)?;
+pub fn get_identity<'a>(account_name: impl Into<&'a str>) -> Result<BasicIdentity> {
+    let home_folder = std::env::var("HOME")?;
+    let account_name: &str = account_name.into();
+    let path_to = format!("{home_folder}/.config/dfx/identity/{account_name}/identity.pem");
+    let identity = BasicIdentity::from_pem_file(Path::new(&path_to))?;
     Ok(identity)
 }
 
@@ -44,7 +42,7 @@ fn get_identity(account_name: impl AsRef<Path>) -> Result<BasicIdentity> {
 /// mkdir -p ~/.config/dfx/identity/
 /// cp -Rn ./identity/.config/dfx/identity/* ~/.config/dfx/identity/
 /// ```
-pub async fn get_agent(name: impl AsRef<Path>, url: Option<&str>) -> Result<Agent> {
+pub async fn get_agent(name: impl Into<&str>, url: Option<&str>) -> Result<Agent> {
     let identity = get_identity(name)?;
 
     let url = url.unwrap_or(URL);

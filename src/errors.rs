@@ -16,6 +16,10 @@ pub enum Error {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 
+    /// Std env var error
+    #[error("Env var error: {0}")]
+    EnvVar(#[from] std::env::VarError),
+
     /// Serde json error
     #[error("Serde error: {0}")]
     Json(#[from] serde_json::Error),

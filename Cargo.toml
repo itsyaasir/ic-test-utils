@@ -4,7 +4,6 @@ name = "ic-test-utils"
 version = "0.1.0"
 
 [dependencies]
-dirs = "4.0"
 garcon = "0.2"
 ic-agent = "0.11"
 serde = "1.0"
