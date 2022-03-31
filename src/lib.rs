@@ -2,9 +2,9 @@
 #![doc = include_str!("../README.md")]
 use std::path::Path;
 
-use ic_agent::agent::http_transport::ReqwestHttpReplicaV2Transport;
 use ic_agent::ic_types::Principal;
 use ic_agent::identity::BasicIdentity;
+use ic_agent::{agent::http_transport::ReqwestHttpReplicaV2Transport, identity::PemError};
 use ic_cdk::export::candid::utils::ArgumentEncoder;
 
 pub use ic_agent::Agent;
@@ -24,12 +24,19 @@ const URL: &str = "http://localhost:8000";
 ///
 /// If this is ever needed outside of `get_agent` just make this
 /// function public.
-pub fn get_identity<'a>(account_name: impl Into<&'a str>) -> Result<BasicIdentity> {
-    let home_folder = std::env::var("HOME")?;
-    let account_name: &str = account_name.into();
-    let path_to = format!("{home_folder}/.config/dfx/identity/{account_name}/identity.pem");
-    let identity = BasicIdentity::from_pem_file(Path::new(&path_to))?;
-    Ok(identity)
+pub fn get_identity(account_name: impl AsRef<Path>) -> Result<BasicIdentity> {
+    let mut ident_path = dirs::home_dir().ok_or(crate::Error::MissingConfig)?;
+    ident_path.push(".config");
+    ident_path.push("dfx/identity");
+    ident_path.push(account_name);
+    ident_path.push("identity.pem");
+    match BasicIdentity::from_pem_file(&ident_path) {
+        Ok(identity) => Ok(identity),
+        Err(PemError::Io(e)) if e.kind() == std::io::ErrorKind::NotFound => {
+            Err(Error::CertNotFound(ident_path))
+        }
+        Err(err) => Err(Error::from(err)),
+    }
 }
 
 /// Get an agent by identity name.
@@ -43,7 +50,7 @@ pub fn get_identity<'a>(account_name: impl Into<&'a str>) -> Result<BasicIdentit
 /// cp -Rn ./identity/.config/dfx/identity/* ~/.config/dfx/identity/
 /// ```
 pub async fn get_agent(name: impl Into<&str>, url: Option<&str>) -> Result<Agent> {
-    let identity = get_identity(name)?;
+    let identity = get_identity(name.into())?;
 
     let url = url.unwrap_or(URL);
     let transport = ReqwestHttpReplicaV2Transport::create(url)?;

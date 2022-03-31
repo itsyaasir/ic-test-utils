@@ -1,6 +1,5 @@
 //! Create and manage a ledger canister
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
 
 use ic_agent::ic_types::Principal;
 use ic_agent::identity::Identity;
