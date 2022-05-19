@@ -5,7 +5,7 @@ use std::path::Path;
 use ic_agent::agent::http_transport::ReqwestHttpReplicaV2Transport;
 use ic_agent::ic_types::Principal;
 use ic_agent::identity::BasicIdentity;
-use ic_cdk::export::candid::utils::ArgumentEncoder;
+use candid::utils::ArgumentEncoder;
 
 pub use ic_agent::Agent;
 
@@ -13,7 +13,6 @@ mod errors;
 pub use errors::{Error, Result};
 
 pub mod canister;
-pub mod ledger;
 
 pub use canister::{Canister, Management, ManagementCanister, Wallet, WalletCanister};
 

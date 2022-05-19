@@ -1,4 +1,4 @@
-use ic_cdk::export::candid::{
+use candid::{
     encode_args, utils::ArgumentEncoder, CandidType, Decode, Deserialize, Encode, Principal,
 };
 

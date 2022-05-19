@@ -15,7 +15,7 @@ use std::fs::read_to_string;
 
 use ic_agent::ic_types::Principal;
 use ic_agent::{agent::UpdateBuilder, Agent};
-use ic_cdk::export::candid::{CandidType, Decode, Deserialize, Encode};
+use candid::{CandidType, Decode, Deserialize, Encode};
 
 use super::Canister;
 use crate::get_waiter;

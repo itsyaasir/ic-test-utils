@@ -13,7 +13,7 @@ use std::marker::PhantomData;
 use crate::Result;
 use ic_agent::agent::{Agent, QueryBuilder, UpdateBuilder};
 use ic_agent::ic_types::Principal;
-use ic_cdk::export::candid::{CandidType, Encode};
+use candid::{CandidType, Encode};
 
 mod management;
 mod wallet;
