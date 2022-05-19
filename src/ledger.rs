@@ -1,6 +1,5 @@
 //! Create and manage a ledger canister
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
 
 use ic_agent::ic_types::Principal;
 use ic_agent::identity::Identity;
@@ -31,14 +30,14 @@ pub const LEDGER_WASM: &[u8] = include_bytes!("ledger.wasm");
 /// # }
 /// ```
 pub struct LedgerBuilder {
-    owner: PathBuf,
+    owner: String,
     accounts: HashMap<AccountIdentifier, Tokens>,
 }
 
 impl LedgerBuilder {
-    fn new(owner: impl AsRef<Path>) -> Self {
+    fn new(owner: impl Into<String>) -> Self {
         Self {
-            owner: owner.as_ref().to_owned(),
+            owner: owner.into(),
             accounts: HashMap::new(),
         }
     }
@@ -50,7 +49,7 @@ impl LedgerBuilder {
         account_name: impl AsRef<str>,
         cycles: impl Into<Option<u64>>,
     ) -> Result<Principal> {
-        let owner = AccountIdentifier::new(get_identity(&self.owner)?.sender()?.into(), None);
+        let owner = AccountIdentifier::new(get_identity(&*self.owner)?.sender()?.into(), None);
 
         let initial_values = std::mem::take(&mut self.accounts);
 
@@ -74,10 +73,10 @@ impl LedgerBuilder {
     /// This is now the owner account. The owner account is set when calling [`new_ledger_canister`].
     pub fn with_account(
         &mut self,
-        account_name: impl AsRef<Path>,
+        account_name: impl Into<String>,
         tokens: Tokens,
     ) -> Result<&mut Self> {
-        let ident = super::get_identity(account_name)?;
+        let ident = super::get_identity(&*account_name.into())?;
         let principal = ident.sender()?;
         let account = AccountIdentifier::new(principal.into(), None);
         self.accounts.insert(account, tokens);
@@ -86,6 +85,6 @@ impl LedgerBuilder {
 }
 
 /// Create a new ledger canister through the [`LedgerBuilder`]
-pub fn new_ledger_canister(owner: impl AsRef<Path>) -> LedgerBuilder {
+pub fn new_ledger_canister(owner: impl Into<String>) -> LedgerBuilder {
     LedgerBuilder::new(owner)
 }
