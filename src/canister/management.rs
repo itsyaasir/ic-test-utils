@@ -1,10 +1,9 @@
 use candid::{
-    encode_args, utils::ArgumentEncoder, CandidType, Decode, Deserialize, Encode, Principal,
+    encode_args, utils::ArgumentEncoder, CandidType, Deserialize, Encode, Principal,
 };
 
-use super::wallet::Wallet;
 use super::{Agent, Canister};
-use crate::Result;
+use crate::{get_waiter, Result};
 
 /// The install mode of the canister to install. If a canister is already installed,
 /// using [InstallMode::Install] will be an error. [InstallMode::Reinstall] overwrites
@@ -53,9 +52,8 @@ struct In {
 /// # use ic_agent::Agent;
 /// use ic_test_utils::canister::Canister;
 /// # async fn run(agent: &Agent, principal: ic_cdk::export::candid::Principal) {
-/// let wallet = Canister::new_wallet(agent, "account_name", None).unwrap();
 /// let management = Canister::new_management(agent);
-/// management.stop_canister(&wallet, principal).await;
+/// management.stop_canister(&agent, principal).await;
 /// # }
 /// ```
 pub struct Management;
@@ -67,27 +65,9 @@ impl<'agent> Canister<'agent, Management> {
         Self::new(id, agent)
     }
 
-    // Make a call through the wallet so cycles
-    // can be spent
-    async fn through_wallet_call<Out>(
-        &self,
-        wallet: &Canister<'_, Wallet>,
-        fn_name: &str,
-        cycles: u64,
-        arg: Option<Vec<u8>>,
-    ) -> Result<Out>
-    where
-        Out: CandidType + for<'de> Deserialize<'de>,
-    {
-        let call = self.update_raw(fn_name, arg)?;
-        let result = wallet.call_forward(call, cycles).await?;
-        let out = Decode!(&result, Out)?;
-        Ok(out)
-    }
-
     async fn _install_code<'wallet_agent, T: ArgumentEncoder>(
         &self,
-        wallet: &Canister<'wallet_agent, Wallet>,
+        agent: &Agent,
         canister_id: Principal,
         bytecode: Vec<u8>,
         mode: InstallMode,
@@ -101,7 +81,10 @@ impl<'agent> Canister<'agent, Management> {
         };
 
         let args = Encode!(&install_args)?;
-        self.through_wallet_call::<()>(wallet, "install_code", 0, Some(args))
+        agent
+            .update(&Principal::management_canister(), "install_code")
+            .with_arg(args)
+            .call_and_wait(get_waiter())
             .await?;
 
         Ok(())
@@ -109,51 +92,70 @@ impl<'agent> Canister<'agent, Management> {
 
     /// Install code in an existing canister.
     /// To create a canister first use [`Canister::create_canister`]
-    pub async fn install_code<'wallet_agent, T: ArgumentEncoder>(
+    pub async fn install_code<T: ArgumentEncoder>(
         &self,
-        wallet: &Canister<'wallet_agent, Wallet>,
+        agent: &Agent,
         canister_id: Principal,
         bytecode: Vec<u8>,
         arg: T,
     ) -> Result<()> {
-        self._install_code(wallet, canister_id, bytecode, InstallMode::Install, arg)
+        self._install_code(agent, canister_id, bytecode, InstallMode::Install, arg)
+            .await
+    }
+
+    /// Replaces code of an existing canister. This method completely erases the old canister with
+    /// all its state. If you want to upgrade the canister, call [`Canister::upgrade_code`] instead.
+    pub async fn reinstall_code<T: ArgumentEncoder>(
+        &self,
+        agent: &Agent,
+        canister_id: Principal,
+        bytecode: Vec<u8>,
+        arg: T,
+    ) -> Result<()> {
+        self._install_code(agent, canister_id, bytecode, InstallMode::Reinstall, arg)
             .await
     }
 
     /// Upgrade an existing canister.
     /// Upgrading a canister for a test is possible even if the underlying binary hasn't changed
-    pub async fn upgrade_code<'wallet_agent, T: ArgumentEncoder>(
+    pub async fn upgrade_code<T: ArgumentEncoder>(
         &self,
-        wallet: &Canister<'wallet_agent, Wallet>,
+        agent: &Agent,
         canister_id: Principal,
         bytecode: Vec<u8>,
         arg: T,
     ) -> Result<()> {
-        self._install_code(wallet, canister_id, bytecode, InstallMode::Upgrade, arg)
+        self._install_code(agent, canister_id, bytecode, InstallMode::Upgrade, arg)
             .await
     }
 
     /// Stop a running canister
-    pub async fn stop_canister<'wallet_agent>(
+    pub async fn stop_canister(
         &self,
-        wallet: &Canister<'wallet_agent, Wallet>,
+        agent: &Agent,
         canister_id: Principal, // canister to stop
     ) -> Result<()> {
         let arg = Encode!(&In { canister_id })?;
-        self.through_wallet_call::<()>(wallet, "stop_canister", 0, Some(arg))
+        agent
+            .update(&Principal::management_canister(), "stop_canister")
+            .with_arg(arg)
+            .call_and_wait(get_waiter())
             .await?;
         Ok(())
     }
 
     /// Delete a canister. The target canister can not be running,
     /// make sure the canister has stopped first: [`Canister::stop_canister`]
-    pub async fn delete_canister<'wallet_agent>(
+    pub async fn delete_canister(
         &self,
-        wallet: &Canister<'wallet_agent, Wallet>,
+        agent: &Agent,
         canister_id: Principal, // canister to delete
     ) -> Result<()> {
         let arg = Encode!(&In { canister_id })?;
-        self.through_wallet_call(wallet, "delete_canister", 0, Some(arg))
+        agent
+            .update(&Principal::management_canister(), "delete_canister")
+            .with_arg(arg)
+            .call_and_wait(get_waiter())
             .await?;
         Ok(())
     }
