@@ -11,9 +11,9 @@
 use std::marker::PhantomData;
 
 use crate::Result;
+use candid::{CandidType, Encode};
 use ic_agent::agent::{Agent, QueryBuilder, UpdateBuilder};
 use ic_agent::ic_types::Principal;
-use ic_cdk::export::candid::{CandidType, Encode};
 
 mod management;
 mod wallet;
@@ -47,19 +47,6 @@ impl<'agent, T> Canister<'agent, T> {
     /// The id of the canister
     pub fn principal(&self) -> &Principal {
         &self.id
-    }
-
-    /// Update
-    fn update_raw(
-        &self,
-        method_name: impl Into<String>,
-        args: Option<Vec<u8>>,
-    ) -> Result<UpdateBuilder<'_>> {
-        let mut builder = self.agent.update(&self.id, method_name);
-        if let Some(ref args) = args {
-            builder.with_arg(args);
-        }
-        Ok(builder)
     }
 
     /// Update call to the canister

@@ -2,10 +2,10 @@
 #![doc = include_str!("../README.md")]
 use std::path::Path;
 
+use candid::utils::ArgumentEncoder;
 use ic_agent::ic_types::Principal;
 use ic_agent::identity::BasicIdentity;
 use ic_agent::{agent::http_transport::ReqwestHttpReplicaV2Transport, identity::PemError};
-use ic_cdk::export::candid::utils::ArgumentEncoder;
 
 pub use ic_agent::Agent;
 
@@ -13,7 +13,6 @@ mod errors;
 pub use errors::{Error, Result};
 
 pub mod canister;
-pub mod ledger;
 
 pub use canister::{Canister, Management, ManagementCanister, Wallet, WalletCanister};
 
@@ -87,7 +86,7 @@ pub async fn create_canister<T: ArgumentEncoder>(
     let management = Canister::new_management(agent);
     let canister_id = wallet.create_canister(cycles, None).await?;
     management
-        .install_code(&wallet, canister_id, bytecode, arg)
+        .install_code(agent, canister_id, bytecode, arg)
         .await?;
     Ok(canister_id)
 }

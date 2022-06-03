@@ -42,7 +42,7 @@ pub enum Error {
 
     /// Candid error
     #[error("Candid error: {0}")]
-    Candid(#[from] ic_cdk::export::candid::Error),
+    Candid(#[from] candid::Error),
 
     /// Generic error as a String
     #[error("Generic: {0}")]
