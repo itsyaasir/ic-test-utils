@@ -40,17 +40,3 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features --all-targets
           name: Clippy Output
-
-  test:
-    name: Tests with coverage
-    runs-on: ubuntu-latest
-    container:
-      image: xd009642/tarpaulin:develop-nightly
-      options: --security-opt seccomp=unconfined
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Generate code coverage
-        run: |
-          cargo +nightly tarpaulin --verbose --timeout 120 --out Xml
